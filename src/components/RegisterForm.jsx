@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { registerUser} from '../features/auth/authSlice';
-
+import { useNavigate } from 'react-router-dom';
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -14,8 +14,7 @@ const RegisterForm = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState(''); // جديد: لعرض رسالة نجاح
   const dispatch = useDispatch();
-  const authData = useSelector((state) => state.auth);
-  console.log(authData, 'authData');
+  const navigate = useNavigate();
   
 
   const handleChange = (e) => {
@@ -24,7 +23,6 @@ const RegisterForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
     
     if (formData.password !== formData.confirmPassword) {
       setError('كلمة السر غير متطابقة!');
@@ -32,7 +30,7 @@ const RegisterForm = () => {
       return;
     }
     try {
-      const response = await dispatch(registerUser ({
+        await dispatch(registerUser ({
         username: formData.username,
         first_name: formData.firstName,
         last_name: formData.lastName,
@@ -40,7 +38,7 @@ const RegisterForm = () => {
         password: formData.password,
         password2: formData.confirmPassword,
       }));
-      console.log(response);
+      navigate('/login');
 
 
     } catch (error) {
@@ -51,7 +49,6 @@ const RegisterForm = () => {
     }
   };
 
-  console.log(authData, 'authData2');
 
 
   return (
