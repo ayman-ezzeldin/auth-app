@@ -11,11 +11,24 @@ const initialState = {
   user: null,
 };
 
-  export const registerUser = createAsyncThunk("auth/register",
+export const registerUser = createAsyncThunk("auth/register",
   async (userData) => {
     console.log("userData", userData);
     try {
       const response = await axios.post(`${API_URL}register/`, userData);
+      return response.data;
+    } catch (error) {
+      return error.response.data;
+    }
+    
+  }
+)
+
+export const loginUser = createAsyncThunk("auth/login",
+  async (userData) => {
+    console.log("userData", userData);
+    try {
+      const response = await axios.post(`${API_URL}login/`, userData);
       return response.data;
     } catch (error) {
       return error.response.data;
@@ -39,28 +52,31 @@ const authSlice = createSlice({
     },
   },
   extraReducers: (builder) => {
-    builder.addCase(registerUser.fulfilled, (state, action) => {
+    builder
+    .addCase(registerUser.pending, (state) => {
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    })
+    .addCase(registerUser.rejected, (state) => {
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    })
+    .addCase(registerUser.fulfilled, (state, action) => {
       state.accessToken = action.payload.access;
       state.refreshToken = action.payload.refresh;
       state.isAuthenticated = true;
       state.user = action.meta.arg;
       localStorage.setItem('accessToken', action.payload.access);
       localStorage.setItem('refreshToken', action.payload.refresh);
-    }).addCase(registerUser.rejected, (state) => {
-      state.accessToken = null;
-      state.refreshToken = null;
-      state.isAuthenticated = false;
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-    }).addCase(registerUser.pending, (state) => {
-      state.accessToken = null;
-      state.refreshToken = null;
-      state.isAuthenticated = false;
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-    });
+    })
   },
 });
 
-export const { setTokens, setEmail, setUser, logout } = authSlice.actions;
+export const {logout } = authSlice.actions;
 export default authSlice.reducer;
