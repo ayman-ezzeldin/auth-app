@@ -1,8 +1,6 @@
 import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { setEmail, setUser } from '../features/auth/authSlice';
-import { register, sendOtp } from '../api/authApi';
-import { useNavigate } from 'react-router-dom';
+import { registerUser} from '../features/auth/authSlice';
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
@@ -16,7 +14,6 @@ const RegisterForm = () => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState(''); // جديد: لعرض رسالة نجاح
   const dispatch = useDispatch();
-  const navigate = useNavigate();
   const authData = useSelector((state) => state.auth);
   console.log(authData, 'authData');
   
@@ -35,64 +32,27 @@ const RegisterForm = () => {
       return;
     }
     try {
-      const response = await register({
+      const response = await dispatch(registerUser ({
         username: formData.username,
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
         password: formData.password,
         password2: formData.confirmPassword,
-      });
-      // استخدام الـ response
-      // console.log(response ,':رد التسجيل'); // للتحقق من البيانات المرجعة
-      // setSuccessMessage(response.message || 'تم التسجيل بنجاح! سيتم إرسال OTP إلى بريدك.');
-      // setError('');
+      }));
+      console.log(response);
 
-      // حفظ بيانات المستخدم في Redux إذا كانت موجودة في الـ response
-      if (response.user) {
-        dispatch(setUser({
-          username: response.user.username || formData.username,
-          firstName: response.user.first_name || formData.firstName,
-          lastName: response.user.last_name || formData.lastName,
-        }));
-      } else {
-        dispatch(setUser({
-          username: formData.username,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-        }));
-      }
-
-      await sendOtp(formData.email);
-      dispatch(setEmail(formData.email));
-      setSuccessMessage('تم إرسال OTP إلى بريدك!');
-      setTimeout(() => navigate('/verify-email'), 2000);
 
     } catch (error) {
       console.error(error ,':خطأ في التسجيل');
-      // setError('خطأ في التسجيل');
       console.log(error.response?.data?.message );
       
       setSuccessMessage('');
     }
-    // try {
-
-      // إرسال OTP بعد التسجيل
-    //   try {
-    //     await sendOtp(formData.email);
-    //     dispatch(setEmail(formData.email));
-    //     setSuccessMessage('تم إرسال OTP إلى بريدك!');
-    //     setTimeout(() => navigate('/verify-email'), 2000);
-    //   } catch (otpError) {
-    //     setError(otpError.response?.data?.message || 'فشل إرسال OTP. تحقق من البريد أو حاول لاحقًا.');
-    //     setSuccessMessage('');
-    //   }
-    // } catch (error) {
-    //   console.error(error ,':خطأ في التسجيل');
-    //   setError(error.response?.data?.message || 'خطأ في التسجيل');
-    //   setSuccessMessage('');
-    // }
   };
+
+  console.log(authData, 'authData2');
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

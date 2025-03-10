@@ -1,30 +1,33 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import axios from 'axios';
+
+const API_URL = 'https://lucky0wl.pythonanywhere.com/';
+
 
 const initialState = {
   accessToken: localStorage.getItem('accessToken') || null,
   refreshToken: localStorage.getItem('refreshToken') || null,
   isAuthenticated: !!localStorage.getItem('accessToken'),
-  email: null,
-  user: null, // لتخزين بيانات المستخدم مثل username و firstName
+  user: null,
 };
+
+  export const registerUser = createAsyncThunk("auth/register",
+  async (userData) => {
+    console.log("userData", userData);
+    try {
+      const response = await axios.post(`${API_URL}register/`, userData);
+      return response.data;
+    } catch (error) {
+      return error.response.data;
+    }
+    
+  }
+)
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
-    setTokens(state, action) {
-      state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
-      state.isAuthenticated = true;
-      localStorage.setItem('accessToken', action.payload.accessToken);
-      localStorage.setItem('refreshToken', action.payload.refreshToken);
-    },
-    setEmail(state, action) {
-      state.email = action.payload;
-    },
-    setUser(state, action) {
-      state.user = action.payload; // بيانات المستخدم من التسجيل
-    },
     logout(state) {
       state.accessToken = null;
       state.refreshToken = null;
@@ -34,6 +37,28 @@ const authSlice = createSlice({
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(registerUser.fulfilled, (state, action) => {
+      state.accessToken = action.payload.access;
+      state.refreshToken = action.payload.refresh;
+      state.isAuthenticated = true;
+      state.user = action.meta.arg;
+      localStorage.setItem('accessToken', action.payload.access);
+      localStorage.setItem('refreshToken', action.payload.refresh);
+    }).addCase(registerUser.rejected, (state) => {
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    }).addCase(registerUser.pending, (state) => {
+      state.accessToken = null;
+      state.refreshToken = null;
+      state.isAuthenticated = false;
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+    });
   },
 });
 
