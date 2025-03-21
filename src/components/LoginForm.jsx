@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { loginUser} from '../features/auth/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser } from '../features/auth/authSlice';
 import { useNavigate } from 'react-router-dom';
 
 const LoginForm = () => {
@@ -8,10 +8,9 @@ const LoginForm = () => {
     email: '',
     password: '',
   });
-  const [successMessage, setSuccessMessage] = useState(''); // جديد: لعرض رسالة نجاح
   const dispatch = useDispatch();
-  const navigate = useNavigate()
-  
+  const navigate = useNavigate();
+  const { isAuthenticated, isVerified, verificationError } = useSelector((state) => state.auth);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -20,29 +19,35 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-        await dispatch(loginUser ({
+      const result = await dispatch(loginUser({
         email: formData.email,
         password: formData.password,
-      }));
-      navigate('/');
+      })).unwrap(); // unwrap() throws error if thunk fails
       
+      if (result) {
+        // Check verification status after login
+        if (isVerified) {
+          navigate('/'); // Go to homepage if verified
+        } else {
+          navigate('/verify'); // Go to verification page if unverified
+        }
+      }
     } catch (error) {
-      console.error(error ,':خطأ في التسجيل');
-      console.log(error.response?.data?.message );
-      
-      setSuccessMessage('');
+      console.error('خطأ في تسجيل الدخول:', error);
     }
   };
-
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
-        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">تسجيل حساب جديد</h2>
-        {successMessage && <p className="text-green-500 text-center mb-4">{successMessage}</p>}
+        <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">تسجيل الدخول</h2>
+        {isAuthenticated && isVerified && (
+          <p className="text-green-500 text-center mb-4">تم تسجيل الدخول بنجاح!</p>
+        )}
+        {verificationError && (
+          <p className="text-red-500 text-center mb-4">{verificationError}</p>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
-
           <input
             type="email"
             name="email"
@@ -65,7 +70,7 @@ const LoginForm = () => {
             type="submit"
             className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition duration-300"
           >
-            تسجيل
+            تسجيل الدخول
           </button>
         </form>
       </div>

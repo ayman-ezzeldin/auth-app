@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { registerUser} from '../features/auth/authSlice';
+import { useDispatch, useSelector } from 'react-redux';
+import { registerUser } from '../features/auth/authSlice';
 import { useNavigate } from 'react-router-dom';
+
 const RegisterForm = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -11,11 +12,9 @@ const RegisterForm = () => {
     password: '',
     confirmPassword: '',
   });
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState(''); // جديد: لعرض رسالة نجاح
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  
+  const { isAuthenticated, verificationError } = useSelector((state) => state.auth);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -23,40 +22,41 @@ const RegisterForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
+    // Check if passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('كلمة السر غير متطابقة!');
-      setSuccessMessage('');
+      console.error('كلمة السر غير متطابقة!');
       return;
     }
+
     try {
-        await dispatch(registerUser ({
+      const result = await dispatch(registerUser({
         username: formData.username,
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
         password: formData.password,
         password2: formData.confirmPassword,
-      }));
-      navigate('/login');
+      })).unwrap(); // unwrap() throws error if thunk fails
 
-
+      if (result) {
+        navigate('/verify'); // Navigate to verification page after registration
+      }
     } catch (error) {
-      console.error(error ,':خطأ في التسجيل');
-      console.log(error.response?.data?.message );
-      
-      setSuccessMessage('');
+      console.error('خطأ في التسجيل:', error);
     }
   };
-
-
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
         <h2 className="text-2xl font-bold text-center text-gray-800 mb-6">تسجيل حساب جديد</h2>
-        {error && <p className="text-red-500 text-center mb-4">{error}</p>}
-        {successMessage && <p className="text-green-500 text-center mb-4">{successMessage}</p>}
+        {isAuthenticated && (
+          <p className="text-green-500 text-center mb-4">تم التسجيل بنجاح! الرجاء التحقق من بريدك الإلكتروني.</p>
+        )}
+        {verificationError && (
+          <p className="text-red-500 text-center mb-4">{verificationError}</p>
+        )}
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
             type="text"
